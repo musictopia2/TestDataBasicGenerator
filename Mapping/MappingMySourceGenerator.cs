@@ -1,6 +1,6 @@
 ﻿namespace TestDataBasicGenerator.Mapping;
 [Generator] //this is important so it knows this class is a generator which will generate code for a class using it.
-public class MySourceGenerator : IIncrementalGenerator
+public class MappingMySourceGenerator : IIncrementalGenerator
 {
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
@@ -44,6 +44,10 @@ public class MySourceGenerator : IIncrementalGenerator
     }
     private void Execute(SourceProductionContext context, ImmutableArray<CompleteInformation> list)
     {
+        if (list.Count() == 0)
+        {
+            return; //because there was none.
+        }
         EmitClass emit = new(list, context);
         emit.Emit();
     }

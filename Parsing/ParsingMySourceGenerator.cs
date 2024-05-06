@@ -2,7 +2,7 @@
 
 namespace TestDataBasicGenerator.Parsing;
 [Generator]
-public class MySourceGenerator : IIncrementalGenerator
+public class ParsingMySourceGenerator : IIncrementalGenerator
 {
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
