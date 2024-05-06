@@ -27,7 +27,7 @@ internal static class CodeBlockExtensions
                 .WriteCodeBlock(w =>
                 {
                     w.WriteLine("""
-                        throw new CustomBasicException("Invalid cast when invoking to get the data");
+                        throw new global::CommonBasicLibraries.BasicDataSettingsAndProcesses.CustomBasicException("Invalid cast when invoking to get the data");
                         """);
                 });
             });
@@ -42,10 +42,10 @@ internal static class CodeBlockExtensions
     {
         var parameter = method.Parameters.First(x => x.TypeCategory == EnumSimpleTypeCategory.CustomEnum || x.TypeCategory == EnumSimpleTypeCategory.StandardEnum);
         int upTo = method.Parameters.IndexOf(parameter);
-        w.PopulateEnumArgument(method, upTo, parameter);
+        w.PopulateEnumArgument(upTo, parameter);
         return w;
     }
-    private static ICodeBlock PopulateEnumArgument(this ICodeBlock w, MethodModel method, int upTo, ParameterModel p)
+    private static ICodeBlock PopulateEnumArgument(this ICodeBlock w, int upTo, ParameterModel p)
     {
         w.WriteLine($"{p.FullName} enumToUse = default;")
             .WriteLine($"string argument = arguments[{upTo}];");
@@ -78,20 +78,21 @@ internal static class CodeBlockExtensions
     private static ICodeBlock PopulateSingleArgumentInformation(this ICodeBlock w, MethodModel method)
     {
         ParameterModel p = method.Parameters.Single(x => x.ParmeterCategory != EnumParameterCategory.NotAllowed);
+        string variable = method.Parameters.Single().VariableName;
         if (p.TypeCategory == EnumSimpleTypeCategory.CustomEnum || p.TypeCategory == EnumSimpleTypeCategory.StandardEnum)
         {
-            w.PopulateEnumArgument(method, 0, p);
-            w.WriteLine($"return data.{method.Name}(enumToUse).ToString();");
+            w.PopulateEnumArgument(0, p);
+            w.WriteLine($"return data.{method.Name}({variable}: enumToUse).ToString();");
             return w;
         }
         if (p.TypeCategory != EnumSimpleTypeCategory.String)
         {
             string toUse = p.TypeCategory.GetParseMethodName();
-            w.WriteLine($"return data.{method.Name}({toUse}.Parse(arguments[0])).ToString();");
+            w.WriteLine($"return data.{method.Name}({variable}: {toUse}.Parse(arguments[0])).ToString();");
         }
         else
         {
-            w.WriteLine($"return data.{method.Name}((arguments[0]).ToString());");
+            w.WriteLine($"return data.{method.Name}({variable}: (arguments[0]).ToString());");
         }
         return w;
     }
@@ -142,20 +143,22 @@ internal static class CodeBlockExtensions
             w.Write($"return data.{method.Name}(");
             int upTo = 0;
             StrCat cats = new();
+            string variable;
             foreach (var item in parameters)
             {
+                variable = $"{item.VariableName}:";
                 if (item.TypeCategory == EnumSimpleTypeCategory.CustomEnum || item.TypeCategory == EnumSimpleTypeCategory.StandardEnum)
                 {
-                    cats.AddToString("enumToUse", ", ");
+                    cats.AddToString($"{variable} enumToUse", ", ");
                 }
                 else if (item.TypeCategory != EnumSimpleTypeCategory.String)
                 {
                     string toUse = item.TypeCategory.GetParseMethodName();
-                    cats.AddToString($"{toUse}.Parse(arguments[{upTo}])", ", ");
+                    cats.AddToString($"{variable} {toUse}.Parse(arguments[{upTo}])", ", ");
                 }
                 else
                 {
-                    cats.AddToString($"arguments[{upTo}]", ", ");
+                    cats.AddToString($"{variable} arguments[{upTo}]", ", ");
                 }
                 upTo++;
             }

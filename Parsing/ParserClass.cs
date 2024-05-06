@@ -28,6 +28,10 @@ internal class ParserClass(IEnumerable<ClassDeclarationSyntax> list, Compilation
         {
             return false;
         }
+        if (methodSymbol.ReturnType.TypeKind == TypeKind.Array || methodSymbol.ReturnType.TypeKind == TypeKind.TypeParameter)
+        {
+            return false; //obviously can't use even any types where the return type is an array or even type parameter since has to be put to string.
+        }
         EnumSimpleTypeCategory category;
         category = methodSymbol.ReturnType.GetVariableCategory();
         if (category == EnumSimpleTypeCategory.None)
@@ -77,6 +81,7 @@ internal class ParserClass(IEnumerable<ClassDeclarationSyntax> list, Compilation
         foreach (var item in list)
         {
             ParameterModel p = new();
+            p.VariableName = item.Name;
             p.TypeCategory = item.Type.GetVariableCategory();
             if (p.TypeCategory == EnumSimpleTypeCategory.None)
             {
