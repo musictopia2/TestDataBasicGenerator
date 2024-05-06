@@ -7,7 +7,7 @@ internal class ParserClass(IEnumerable<ClassDeclarationSyntax> list, Compilation
         foreach (var item in list)
         {
             ResultsModel results = GetResult(item);
-            if (output.Any(x => x.ClassName == results.ClassName) == false)
+            if (output.Any(x => x.ClassName == results.ClassName) == false && results.Methods.Count > 0)
             {
                 output.Add(results);
             }
@@ -52,6 +52,19 @@ internal class ParserClass(IEnumerable<ClassDeclarationSyntax> list, Compilation
                 if (method.Parameters.Any(x => x.ParmeterCategory == EnumParameterCategory.Disabled) == false)
                 {
                     output.Add(method);
+                }
+            }
+        }
+        var nexts = output.GroupBy(x => x.Name).ToBasicList();
+        foreach (var item in nexts)
+        {
+            if (item.Count() > 1)
+            {
+                int upTo = 0;
+                foreach (var item2 in item)
+                {
+                    upTo++;
+                    item2.OverloadPart = upTo.ToString();
                 }
             }
         }

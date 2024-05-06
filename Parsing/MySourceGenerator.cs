@@ -43,12 +43,7 @@ public class MySourceGenerator : IIncrementalGenerator
         Compilation compilation
         )
     {
-#if DEBUG
-        if (Debugger.IsAttached == false)
-        {
-            Debugger.Launch();
-        }
-#endif
+
         ParserClass parses = new(classes, compilation);
         BasicList<ResultsModel> output = parses.GetResults();
 

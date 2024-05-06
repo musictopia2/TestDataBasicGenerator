@@ -5,4 +5,5 @@ internal record MethodModel
     public ImmutableArray<ParameterModel> Parameters { get; set; } = [];
     public int TotalParameters { get; set; }
     public int OptionalParameters { get; set; }
+    public string OverloadPart { get; set; } = ""; //start with blank.
 }

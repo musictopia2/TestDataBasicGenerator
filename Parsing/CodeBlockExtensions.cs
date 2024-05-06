@@ -9,13 +9,13 @@ internal static class CodeBlockExtensions
             """)
             .WriteLine($"method.TotalArgumentsCount = {method.TotalParameters};")
             .WriteLine($"method.OptionalArgumentsCount = {method.OptionalParameters};")
-            .WriteLine($"method.Invoke = Invoke{method.Name}Results;")
+            .WriteLine($"method.Invoke = Invoke{method.Name}{method.OverloadPart}Results;")
             .WriteLine("dataSet.Methods.Add(method);");
         return w;
     }
     public static ICodeBlock PopulatePrivateMethod(this ICodeBlock w, MethodModel method, ResultsModel result)
     {
-        w.WriteLine($"private string Invoke{method.Name}Results(object payLoad, global::CommonBasicLibraries.CollectionClasses.BasicList<string> arguments)")
+        w.WriteLine($"private string Invoke{method.Name}{method.OverloadPart}Results(object payLoad, global::CommonBasicLibraries.CollectionClasses.BasicList<string> arguments)")
             .WriteCodeBlock(w =>
             {
                 w.WriteLine($"if (payLoad is {result.Namespace}.{result.ClassName} data)")
@@ -38,10 +38,17 @@ internal static class CodeBlockExtensions
         w.WriteLine($"enumToUse = {p.FullName}.{e.DisplayValue};");
         return w;
     }
-    private static ICodeBlock PopulateEnumSingleArgument(this ICodeBlock w, MethodModel method, ParameterModel p)
+    private static ICodeBlock PopulateEnumLaterArgument(this ICodeBlock w, MethodModel method)
+    {
+        var parameter = method.Parameters.First(x => x.TypeCategory == EnumSimpleTypeCategory.CustomEnum || x.TypeCategory == EnumSimpleTypeCategory.StandardEnum);
+        int upTo = method.Parameters.IndexOf(parameter);
+        w.PopulateEnumArgument(method, upTo, parameter);
+        return w;
+    }
+    private static ICodeBlock PopulateEnumArgument(this ICodeBlock w, MethodModel method, int upTo, ParameterModel p)
     {
         w.WriteLine($"{p.FullName} enumToUse = default;")
-            .WriteLine("string argument = arguments.Single();");
+            .WriteLine($"string argument = arguments[{upTo}];");
         foreach (var item in p.EnumValues)
         {
             w.WriteLine($"""
@@ -60,7 +67,7 @@ internal static class CodeBlockExtensions
                 """)
                 .WriteCodeBlock(w => w.PopulateResultOfEnum(p, item));
         }
-        w.WriteLine($"return data.{method.Name}(enumToUse).ToString();");
+
         return w;
     }
     private static ICodeBlock PopulateSimpleReturn(this ICodeBlock w, MethodModel method)
@@ -73,7 +80,8 @@ internal static class CodeBlockExtensions
         ParameterModel p = method.Parameters.Single(x => x.ParmeterCategory != EnumParameterCategory.NotAllowed);
         if (p.TypeCategory == EnumSimpleTypeCategory.CustomEnum || p.TypeCategory == EnumSimpleTypeCategory.StandardEnum)
         {
-            w.PopulateEnumSingleArgument(method, p);
+            w.PopulateEnumArgument(method, 0, p);
+            w.WriteLine($"return data.{method.Name}(enumToUse).ToString();");
             return w;
         }
         if (p.TypeCategory != EnumSimpleTypeCategory.String)
@@ -83,7 +91,7 @@ internal static class CodeBlockExtensions
         }
         else
         {
-            w.WriteLine($"return data.{method.Name}((arguments[0]).ToString();");
+            w.WriteLine($"return data.{method.Name}((arguments[0]).ToString());");
         }
         return w;
     }
@@ -125,6 +133,10 @@ internal static class CodeBlockExtensions
     }
     private static ICodeBlock ProcessWithSpecificArguments(this ICodeBlock w, MethodModel method, BasicList<ParameterModel> parameters)
     {
+        if (parameters.Any(x => x.TypeCategory == EnumSimpleTypeCategory.CustomEnum || x.TypeCategory == EnumSimpleTypeCategory.StandardEnum))
+        {
+            w.PopulateEnumLaterArgument(method);
+        }
         w.WriteLine(w =>
         {
             w.Write($"return data.{method.Name}(");
@@ -132,7 +144,11 @@ internal static class CodeBlockExtensions
             StrCat cats = new();
             foreach (var item in parameters)
             {
-                if (item.TypeCategory != EnumSimpleTypeCategory.String)
+                if (item.TypeCategory == EnumSimpleTypeCategory.CustomEnum || item.TypeCategory == EnumSimpleTypeCategory.StandardEnum)
+                {
+                    cats.AddToString("enumToUse", ", ");
+                }
+                else if (item.TypeCategory != EnumSimpleTypeCategory.String)
                 {
                     string toUse = item.TypeCategory.GetParseMethodName();
                     cats.AddToString($"{toUse}.Parse(arguments[{upTo}])", ", ");
