@@ -1,4 +1,6 @@
-﻿namespace TestDataBasicGenerator.Parsing;
+﻿using System.Diagnostics;
+
+namespace TestDataBasicGenerator.Parsing;
 [Generator]
 public class MySourceGenerator : IIncrementalGenerator
 {
@@ -12,6 +14,7 @@ public class MySourceGenerator : IIncrementalGenerator
         var declares3 = declares2.SelectMany(static (x, _) =>
         {
             ImmutableHashSet<ClassDeclarationSyntax> start = [.. x.Right];
+
             return GetResults(start, x.Left);
         });
         var declares4 = declares3.Collect();
@@ -40,12 +43,23 @@ public class MySourceGenerator : IIncrementalGenerator
         Compilation compilation
         )
     {
+#if DEBUG
+        if (Debugger.IsAttached == false)
+        {
+            Debugger.Launch();
+        }
+#endif
         ParserClass parses = new(classes, compilation);
         BasicList<ResultsModel> output = parses.GetResults();
+
         return [.. output];
     }
     private void Execute(SourceProductionContext context, CompleteInformation complete)
     {
+        if (complete.Results.Count() == 0)
+        {
+            return; //there was none found.  nothing should be generated from this generator this time.
+        }
         EmitClass emit = new(complete, context);
         emit.Emit();
     }

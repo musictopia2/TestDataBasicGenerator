@@ -23,7 +23,7 @@ internal class EmitClass(CompleteInformation complete, SourceProductionContext c
            })
            .WriteCodeBlock(w =>
            {
-               w.WriteLine("global::CommonBasicLibraries.CollectionClasses.BasicList<global::TestDataUSBasicLibrary.SourceGeneratorHelpers.DataSetClassModel> ICaptureDatasets.DataSets()")
+               w.WriteLine("global::CommonBasicLibraries.CollectionClasses.BasicList<global::TestDataUSBasicLibrary.SourceGeneratorHelpers.DataSetClassModel> global::TestDataUSBasicLibrary.SourceGeneratorHelpers.ICaptureDatasets.DataSets()")
                .WriteCodeBlock(w =>
                {
                    w.WriteLine("global::CommonBasicLibraries.CollectionClasses.BasicList<global::TestDataUSBasicLibrary.SourceGeneratorHelpers.DataSetClassModel> output = [];")

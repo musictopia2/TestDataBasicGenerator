@@ -1,4 +1,5 @@
-﻿namespace TestDataBasicGenerator.Mapping;
+﻿global using TestDataBasicGenerator.Mapping;
+namespace TestDataBasicGenerator.Mapping;
 [IncludeCode]
 internal interface IRuleMapPropertyConfig<T>
 {
