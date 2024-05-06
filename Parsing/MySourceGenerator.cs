@@ -28,15 +28,20 @@ public class MySourceGenerator : IIncrementalGenerator
     }
     private bool IsSyntaxTarget(SyntaxNode syntax)
     {
-        bool rets = syntax is ClassDeclarationSyntax ctx &&
-            ctx.BaseList is not null &&
-            ctx.ToString().Contains("DataSet");
-        return rets;
+        return syntax is ClassDeclarationSyntax ctx &&
+           ctx.IsPublic();
     }
     private ClassDeclarationSyntax? GetTarget(GeneratorSyntaxContext context)
     {
         var ourClass = context.GetClassNode();
-        return ourClass;
+        var symbol = context.GetClassSymbol(ourClass);
+        bool rets = symbol.Implements("IMustashable");
+        if (rets)
+        {
+            return ourClass;
+        }
+        return null;
+
     }
     private static ImmutableHashSet<ResultsModel> GetResults(
         ImmutableHashSet<ClassDeclarationSyntax> classes,
