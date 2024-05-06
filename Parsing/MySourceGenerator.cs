@@ -1,0 +1,52 @@
+﻿namespace TestDataBasicGenerator.Parsing;
+[Generator]
+public class MySourceGenerator : IIncrementalGenerator
+{
+    public void Initialize(IncrementalGeneratorInitializationContext context)
+    {
+        IncrementalValuesProvider<ClassDeclarationSyntax> declares1 = context.SyntaxProvider.CreateSyntaxProvider(
+            (s, _) => IsSyntaxTarget(s),
+            (t, _) => GetTarget(t))
+            .Where(m => m != null)!;
+        var declares2 = context.CompilationProvider.Combine(declares1.Collect());
+        var declares3 = declares2.SelectMany(static (x, _) =>
+        {
+            ImmutableHashSet<ClassDeclarationSyntax> start = [.. x.Right];
+            return GetResults(start, x.Left);
+        });
+        var declares4 = declares3.Collect();
+        var declares5 = declares4.Combine(context.CompilationProvider).Select(static (item, _) =>
+        {
+            CompleteInformation output;
+            output = new($"{item.Right.AssemblyName}.TestGenerators", item.Left);
+            return output;
+        });
+        context.RegisterSourceOutput(declares5, Execute);
+    }
+    private bool IsSyntaxTarget(SyntaxNode syntax)
+    {
+        bool rets = syntax is ClassDeclarationSyntax ctx &&
+            ctx.BaseList is not null &&
+            ctx.ToString().Contains("DataSet");
+        return rets;
+    }
+    private ClassDeclarationSyntax? GetTarget(GeneratorSyntaxContext context)
+    {
+        var ourClass = context.GetClassNode();
+        return ourClass;
+    }
+    private static ImmutableHashSet<ResultsModel> GetResults(
+        ImmutableHashSet<ClassDeclarationSyntax> classes,
+        Compilation compilation
+        )
+    {
+        ParserClass parses = new(classes, compilation);
+        BasicList<ResultsModel> output = parses.GetResults();
+        return [.. output];
+    }
+    private void Execute(SourceProductionContext context, CompleteInformation complete)
+    {
+        EmitClass emit = new(complete, context);
+        emit.Emit();
+    }
+}
