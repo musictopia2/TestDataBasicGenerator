@@ -48,6 +48,8 @@ public class MappingMySourceGenerator : IIncrementalGenerator
         {
             return; //because there was none.
         }
+        //TestConsoleClass test = new(list, context);
+        //test.Emit();
         EmitClass emit = new(list, context);
         emit.Emit();
     }

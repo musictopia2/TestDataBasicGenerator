@@ -1,4 +1,7 @@
-﻿namespace TestDataBasicGenerator.Mapping;
+﻿using System.Diagnostics;
+using System.Runtime;
+
+namespace TestDataBasicGenerator.Mapping;
 internal class ParserClass(IEnumerable<ClassDeclarationSyntax> list, Compilation compilation)
 {
     public BasicList<CompleteInformation> GetComplete()
@@ -114,28 +117,65 @@ internal class ParserClass(IEnumerable<ClassDeclarationSyntax> list, Compilation
         output.Category = "";
         TemporaryModel temp = symbol.GetStartingPropertyInformation<TemporaryModel>();
         output.Name = temp.PropertyName;
-        if (symbol.Type.Name.ToLower() == "guid")
+        output.Type = GetPropertyType(symbol);
+        if (output.Type.ToLower().EndsWith("basiclist"))
         {
-            output.Type = "Guid";
-        }
-        else if (symbol.Type.Name.ToLower() == "int64")
-        {
-            output.Type = "long";
-        }
-        else if (temp.VariableCustomCategory == EnumSimpleTypeCategory.StandardEnum || temp.VariableCustomCategory == EnumSimpleTypeCategory.None || temp.VariableCustomCategory == EnumSimpleTypeCategory.CustomEnum)
-        {
-            output.Type = $"global::{temp.ContainingNameSpace}.{temp.UnderlyingSymbolName}";
-        }
-        else if (temp.VariableCustomCategory == EnumSimpleTypeCategory.DateOnly || temp.VariableCustomCategory == EnumSimpleTypeCategory.TimeOnly || temp.VariableCustomCategory == EnumSimpleTypeCategory.DateTime)
-        {
-            output.Type = temp.VariableCustomCategory.ToString();
-        }
-        else
-        {
-            output.Type = temp.VariableCustomCategory.ToString().ToLower();
+            var mm = symbol.Type.GetSingleGenericTypeUsed();
+            string firsts = output.Type;
+            string nexts = GetGenericType(mm!);
+            if (nexts == "")
+            {
+                nexts = mm!.Name.ToLower();
+            }
+            output.Type = $"{firsts}<{nexts}>";
         }
         return output;
     }
+    private string GetGenericType(ITypeSymbol symbol)
+    {
+        string output;
+        if (symbol.Name.ToLower() == "guid")
+        {
+            output = "Guid";
+        }
+        else if (symbol.Name.ToLower() == "int64")
+        {
+            output = "long";
+        }
+        else if (symbol.Name.ToLower() == "int32")
+        {
+            output = "int"; //has to be int in this case.
+        }
+        else
+        {
+            output = "";
+        }
+        return output;
+    }
+    private string GetPropertyType(IPropertySymbol symbol)
+    {
+        TemporaryModel temp = symbol.GetStartingPropertyInformation<TemporaryModel>();
+        string output = "";
+        string firsts = GetGenericType(symbol.Type);
+        if (firsts != "")
+        {
+            return output;
+        }
+        if (temp.VariableCustomCategory == EnumSimpleTypeCategory.StandardEnum || temp.VariableCustomCategory == EnumSimpleTypeCategory.None || temp.VariableCustomCategory == EnumSimpleTypeCategory.CustomEnum)
+        {
+            output = $"global::{temp.ContainingNameSpace}.{temp.UnderlyingSymbolName}";
+        }
+        else if (temp.VariableCustomCategory == EnumSimpleTypeCategory.DateOnly || temp.VariableCustomCategory == EnumSimpleTypeCategory.TimeOnly || temp.VariableCustomCategory == EnumSimpleTypeCategory.DateTime)
+        {
+            output = temp.VariableCustomCategory.ToString();
+        }
+        else
+        {
+            output = temp.VariableCustomCategory.ToString().ToLower();
+        }
+        return output;
+    }
+
     private bool CanIncludeProperty(IPropertySymbol p)
     {
         if (p.IsReadOnly)
