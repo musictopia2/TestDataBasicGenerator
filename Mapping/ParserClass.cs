@@ -159,7 +159,7 @@ internal class ParserClass(IEnumerable<ClassDeclarationSyntax> list, Compilation
         string firsts = GetGenericType(symbol.Type);
         if (firsts != "")
         {
-            return output;
+            return firsts; //i think this is the bug.
         }
         if (temp.VariableCustomCategory == EnumSimpleTypeCategory.StandardEnum || temp.VariableCustomCategory == EnumSimpleTypeCategory.None || temp.VariableCustomCategory == EnumSimpleTypeCategory.CustomEnum)
         {
